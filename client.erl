@@ -7,7 +7,7 @@
 
 %% Produce initial state
 initial_state(Nick, GUIName) ->
-    #client_st { gui = GUIName }.
+    #client_st { gui = GUIName, connected = false, chatrooms = [], nickname = Nick }.
 
 %% ---------------------------------------------------------------------------
 
@@ -23,10 +23,18 @@ handle(St, {connect, Server}) ->
     Data = "hello?",
     io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
-    Response = genserver:request(ServerAtom, Data),
-    io:fwrite("Client received: ~p~n", [Response]),
-    % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    case #St.connected of
+      true -> 
+        {reply, {error, user_already_connected, "Client is already connected to server!"}, St};
+      false ->
+        Response = genserver:request(ServerAtom, Data),
+        io:fwrite("Client received: ~p~n", [Response]),
+        case Response of
+          "Timeout" -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
+          _ -> {reply, ok, St};
+        end;
+    end;
+% return error after timeout
 
 %% Disconnect from server
 handle(St, disconnect) ->
