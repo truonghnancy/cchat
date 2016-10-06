@@ -23,16 +23,18 @@ handle(St, {connect, Server}) ->
     Data = "hello?",
     io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
-    case #St.connected of
-      true -> 
+    case St#client_st.connected of
+      true ->
         {reply, {error, user_already_connected, "Client is already connected to server!"}, St};
       false ->
-        Response = genserver:request(ServerAtom, Data),
+        Response = genserver:request(ServerAtom, connect),
         io:fwrite("Client received: ~p~n", [Response]),
         case Response of
           "Timeout" -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
-          _ -> {reply, ok, St};
-        end;
+          {result, Ref, R} ->
+            NewSt = St#client_st{connected=true},
+            {reply, ok, NewSt}
+        end
     end;
 % return error after timeout
 
