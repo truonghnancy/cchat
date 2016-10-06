@@ -30,7 +30,7 @@ handle(St, {connect, Server}) ->
         case Response of
           "Timeout" -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
           "connected" ->
-            NewSt = St#client_st{connected=true},
+            NewSt = St#client_st{connected=true, serverAtom = ServerAtom},
             {reply, ok, NewSt}
         end
     end;
@@ -45,6 +45,7 @@ handle(St, disconnect) ->
 handle(St, {join, Channel}) ->
     % {reply, ok, St} ;
     %% TODO: Remeber to add the client nickname when sending request to server
+    genserver:request(St#client_st.serverAtom, {join, Channel, St#client_st.nickname}),
     {reply, {error, not_implemented, "Not implemented"}, St} ;
 
 %% Leave channel
@@ -59,13 +60,17 @@ handle(St, {msg_from_GUI, Channel, Msg}) ->
 
 %% Get current nick
 handle(St, whoami) ->
-    % {reply, "nick", St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    {reply, St#client_st.nickname, St};
 
 %% Change nick
 handle(St, {nick, Nick}) ->
-    % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    case St#client_st.connected of
+      false ->
+        NewState = St#client_st{nickname = Nick},
+        {reply, ok, NewState};
+      true ->
+        {reply, {error, user_already_connected, "Cant't change nickname because user is already connected"}, St}
+    end;
 
 %% Incoming message
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
