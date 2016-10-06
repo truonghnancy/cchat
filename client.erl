@@ -44,6 +44,7 @@ handle(St, disconnect) ->
 % Join channel
 handle(St, {join, Channel}) ->
     % {reply, ok, St} ;
+    %% TODO: Remeber to add the client nickname when sending request to server
     {reply, {error, not_implemented, "Not implemented"}, St} ;
 
 %% Leave channel

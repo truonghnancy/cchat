@@ -22,32 +22,43 @@ initial_cState(ChatroomName, ServerName) ->
 %% and NewState is the new state of the server.
 
 handle(St, Request) ->
-  NewSt = St,
   % io:fwrite("Request ~p~n", [Request]),
   case Request of
     connect ->
-      % set the response
-      Response = "connected";
-      % change the state
+      Response = "connected",
+      NewSt = St;
     disconnect ->
-      Response = "disconnected";
+      Response = "disconnected",
+      NewSt = St;
     {join, Channel} ->
+      ChannelAtom = list_to_atom(Channel),
       case lists:any(fun(e) -> e == Channel end, St#server_st.channels) of
-        true -> 0;
-        false -> 0
-      end,
-      Response = "joined";
-      % check if a chatroom already exists
-      % pass in initial_cState & chatroom name & handle_chat
-      % have to spawn a new thread to make a new chatroom
+        true -> % it does exist
+          % call genserver:request with the channel name to add the client to client list
+          Response = genserver:request(ChannelAtom, {addClient, ChannelAtom}),
+          NewSt = St;
+        false -> % it does NOT exist yet
+          genserver:start(ChannelAtom, initial_cState(ChannelAtom, St#server_st.serverName), fun handle_chat/2),
+          NewSt = St#server_st{channels = channels ++ [ChannelAtom]},
+          Response = "joined"
+      end;
     {leave, Channel} ->
-      Response = "left";
+      Response = "left",
+      NewSt = St;
     {msg_from_GUI, Channel, Msg} ->
-      Response = "Connected to shire";
+      Response = "Connected to shire",
+      NewSt = St;
     {nick, Nick} ->
-      Response = "Changed nickname"
+      Response = "Changed nickname",
+      NewSt = St
     end,
     {reply, Response, NewSt}.
 
 handle_chat(St, Request) ->
-  0.
+  case Request of
+    {addClient, ChannelAtom} ->
+      case lists:any(fun(e) -> e == Channel end, St#server_st.channels) of;
+    _ ->
+      0
+  end,
+  {reply, Response, NewSt}.
