@@ -9,8 +9,8 @@
 initial_state(ServerName) ->
     #server_st{serverName = ServerName, channels = []}.
 
-initial_cState(ChatroomName, ServerName) ->
-  #chatroom_st{name = ChatroomName, clients = [], serverName = ServerName}.
+initial_cState(ChatroomName, ServerName, ClientName) ->
+  #chatroom_st{name = ChatroomName, clients = [ClientName], serverName = ServerName}.
 
 %% ---------------------------------------------------------------------------
 
@@ -30,15 +30,15 @@ handle(St, Request) ->
     disconnect ->
       Response = "disconnected",
       NewSt = St;
-    {join, Channel} ->
+    {join, Channel, ClientName} ->
       ChannelAtom = list_to_atom(Channel),
       case lists:any(fun(e) -> e == Channel end, St#server_st.channels) of
         true -> % it does exist
           % call genserver:request with the channel name to add the client to client list
-          Response = genserver:request(ChannelAtom, {addClient, ChannelAtom}),
+          Response = genserver:request(ChannelAtom, {addClient, ChannelAtom, ClientName}),
           NewSt = St;
         false -> % it does NOT exist yet
-          genserver:start(ChannelAtom, initial_cState(ChannelAtom, St#server_st.serverName), fun handle_chat/2),
+          genserver:start(ChannelAtom, initial_cState(ChannelAtom, St#server_st.serverName, ClientName), fun handle_chat/2),
           NewSt = St#server_st{channels = channels ++ [ChannelAtom]},
           Response = "joined"
       end;
@@ -56,9 +56,14 @@ handle(St, Request) ->
 
 handle_chat(St, Request) ->
   case Request of
-    {addClient, ChannelAtom} ->
-      case lists:any(fun(e) -> e == Channel end, St#server_st.channels) of;
-    _ ->
-      0
+    {addClient, ChannelAtom, ClientName} ->
+      case lists:any(fun(e) -> e == ClientName end, St#chatroom_st.clients) of
+        true ->
+          NewSt = St,
+          Response = "already joined";
+        false ->
+          NewSt = St#chatroom_st{clients = clients ++ [ClientName]},
+          Response = "successfully joined"
+      end
   end,
   {reply, Response, NewSt}.
