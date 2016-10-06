@@ -29,7 +29,7 @@ handle(St, {connect, Server}) ->
         io:fwrite("Client received: ~p~n", [Response]),
         case Response of
           "Timeout" -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
-          "Connected to shire" ->
+          "connected" ->
             NewSt = St#client_st{connected=true},
             {reply, ok, NewSt}
         end
