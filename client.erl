@@ -20,8 +20,6 @@ initial_state(Nick, GUIName) ->
 
 %% Connect to server
 handle(St, {connect, Server}) ->
-    Data = "hello?",
-    io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
     case St#client_st.connected of
       true ->
@@ -31,7 +29,7 @@ handle(St, {connect, Server}) ->
         io:fwrite("Client received: ~p~n", [Response]),
         case Response of
           "Timeout" -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
-          {result, Ref, R} ->
+          "Connected to shire" ->
             NewSt = St#client_st{connected=true},
             {reply, ok, NewSt}
         end

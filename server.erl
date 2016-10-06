@@ -19,25 +19,22 @@ initial_state(ServerName) ->
 %% and NewState is the new state of the server.
 
 handle(St, Request) ->
-  Response = "default",
   NewSt = St,
+  % io:fwrite("Request ~p~n", [Request]),
   case Request of
     connect ->
       % set the response
-      Response = " Connected to shire";
-      % NewSt = St#client_st{connected=true};
+      Response = "Connected to shire";
+      % change the state
     disconnect ->
-      0;
+      Response = "Connected to shire";
     {join, Channel} ->
-      0;
+      Response = "Connected to shire";
     {leave, Channel} ->
-      0;
+      Response = "Connected to shire";
     {msg_from_GUI, Channel, Msg} ->
-      0;
+      Response = "Connected to shire";
     {nick, Nick} ->
-      0
+      Response = "Connected to shire"
     end,
-    % io:fwrite("Server received: ~p~n", [Request]),
-    % Response = "hi!",
-    % io:fwrite("Server is sending: ~p~n", [Response]),
     {reply, Response, NewSt}.
