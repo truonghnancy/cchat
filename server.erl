@@ -24,17 +24,17 @@ handle(St, Request) ->
   case Request of
     connect ->
       % set the response
-      Response = "Connected to shire";
+      Response = "connected";
       % change the state
     disconnect ->
-      Response = "Connected to shire";
+      Response = "disconnected";
     {join, Channel} ->
-      Response = "Connected to shire";
+      Response = "joined";
     {leave, Channel} ->
-      Response = "Connected to shire";
+      Response = "left";
     {msg_from_GUI, Channel, Msg} ->
       Response = "Connected to shire";
     {nick, Nick} ->
-      Response = "Connected to shire"
+      Response = "Changed nickname"
     end,
     {reply, Response, NewSt}.
