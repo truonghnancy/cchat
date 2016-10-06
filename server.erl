@@ -7,9 +7,13 @@
 
 % Produce initial state
 initial_state(ServerName) ->
-    #server_st{}.
+    #server_st{serverName = ServerName}.
 
 %% ---------------------------------------------------------------------------
+
+%% Starts the server with name "shire"
+start_server() ->
+  genserver:start(shire, initial_state(shire), fun handle/2).
 
 %% handle/2 handles requests from clients
 
@@ -19,7 +23,21 @@ initial_state(ServerName) ->
 %% and NewState is the new state of the server.
 
 handle(St, Request) ->
-    io:fwrite("Server received: ~p~n", [Request]),
-    Response = "hi!",
-    io:fwrite("Server is sending: ~p~n", [Response]),
+  case Request of
+    connect ->
+      ;
+    disconnect ->
+      ;
+    {join, Channel} ->
+      ;
+    {leave, Channel} ->
+      ;
+    {msg_from_GUI, Channel, Msg} ->
+      ;
+    {nick, Nick} ->
+      ;
+    end
+    % io:fwrite("Server received: ~p~n", [Request]),
+    % Response = "hi!",
+    % io:fwrite("Server is sending: ~p~n", [Response]),
     {reply, Response, St}.
