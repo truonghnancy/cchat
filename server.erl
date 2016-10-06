@@ -7,7 +7,10 @@
 
 % Produce initial state
 initial_state(ServerName) ->
-    #server_st{serverName = ServerName}.
+    #server_st{serverName = ServerName, channels = []}.
+
+initial_cState(ChatroomName, ServerName) ->
+  #chatroom_st{name = ChatroomName, clients = [], serverName = ServerName}.
 
 %% ---------------------------------------------------------------------------
 
@@ -29,7 +32,14 @@ handle(St, Request) ->
     disconnect ->
       Response = "disconnected";
     {join, Channel} ->
+      case lists:any(fun(e) -> e == Channel end, St#server_st.channels) of
+        true -> 0;
+        false -> 0
+      end,
       Response = "joined";
+      % check if a chatroom already exists
+      % pass in initial_cState & chatroom name & handle_chat
+      % have to spawn a new thread to make a new chatroom
     {leave, Channel} ->
       Response = "left";
     {msg_from_GUI, Channel, Msg} ->
@@ -38,3 +48,6 @@ handle(St, Request) ->
       Response = "Changed nickname"
     end,
     {reply, Response, NewSt}.
+
+handle_chat(St, Request) ->
+  0.

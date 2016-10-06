@@ -6,4 +6,6 @@
 
 % This record defines the structure of the server process.
 % Add whatever other fields you need.
--record(server_st, {serverName}).
+-record(server_st, {serverName, channels}).
+
+-record(chatroom_st, {name, clients, serverName}).
