@@ -57,9 +57,16 @@ handle(St, Request) ->
           Response = joined,
           NewSt = St#server_st{channels = St#server_st.channels ++ [ChannelAtom]}
       end;
-    {leave, Channel} ->
-      Response = "left",
-      NewSt = St;
+    {leave, Channel, ClientName} ->
+      ChannelAtom = list_to_atom(Channel),
+      case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
+        true ->
+          Response = genserver:request(ChannelAtom, {leave, ChannelAtom, ClientName}),
+          NewSt = St;
+        false ->
+          Response = user_not_joined,
+          NewSt = St
+       end;
     {msg_from_GUI, Channel, Msg} ->
       Response = "Connected to shire",
       NewSt = St;
@@ -79,6 +86,15 @@ handle_chat(St, Request) ->
         false ->
           NewSt = St#chatroom_st{clients = St#chatroom_st.clients ++ [ClientName]},
           Response = joined
+      end;
+    {leave, ChannelAtom, ClientName} ->
+      case lists:any(fun(E) -> E == ClientName end, St#chatroom_st.clients) of
+        true ->
+          NewSt = St#chatroom_st{clients = lists:delete(ClientName, St#chatroom_st.clients)},
+          Response = "left";
+        false ->
+          NewSt = St,
+          Response = user_not_joined
       end
   end,
   {reply, Response, NewSt}.
