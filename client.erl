@@ -62,21 +62,31 @@ handle(St, disconnect) ->
 
 % Join channel
 handle(St, {join, Channel}) ->
-    % {reply, ok, St} ;
     %% TODO: Remeber to add the client nickname when sending request to server
-    Response = genserver:request(St#client_st.serverAtom, {join, Channel, St#client_st.nickname}),
-    case Response of
-      user_already_joined ->
-        {reply, {error, user_already_joined, "User already joined this chatroom"}, St};
-      _ ->
-        NewSt = St#client_st{chatrooms = St#client_st.chatrooms ++ [Channel]},
-        {reply, ok, NewSt}
+    case St#client_st.connected of
+      true ->
+        Response = genserver:request(St#client_st.serverAtom, {join, Channel, St#client_st.nickname}),
+        case Response of
+          user_already_joined ->
+            {reply, {error, user_already_joined, "User already joined this chatroom"}, St};
+          joined ->
+            NewSt = St#client_st{chatrooms = St#client_st.chatrooms ++ [Channel]},
+            {reply, ok, NewSt}
+        end;
+      false ->
+        {reply, {error, user_not_connected, "Connect to a server first"}, St}
     end;
 
 %% Leave channel
 handle(St, {leave, Channel}) ->
-    % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    Response = genserver:request(St#client_st.serverAtom, {leave, Channel, St#client_st.nickname}),
+    case Response of
+      user_not_joined ->
+        {reply, {error, user_not_joined, "User has not yet joined this chatroom"}, St};
+      "left" ->
+        NewSt = St#client_st{chatrooms = lists:delete(Channel, St#client_st.chatrooms)},
+        {reply, ok, NewSt}
+    end;
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->

@@ -53,7 +53,8 @@ handle(St, Request) ->
           NewSt = St;
         false -> % it does NOT exist yet
           io:fwrite("ChannelAtom = ~n"),
-          Response = genserver:start(ChannelAtom, initial_cState(ChannelAtom, St#server_st.serverName, ClientName), fun handle_chat/2),
+          genserver:start(ChannelAtom, initial_cState(ChannelAtom, St#server_st.serverName, ClientName), fun handle_chat/2),
+          Response = joined,
           NewSt = St#server_st{channels = St#server_st.channels ++ [ChannelAtom]}
       end;
     {leave, Channel} ->
@@ -77,7 +78,7 @@ handle_chat(St, Request) ->
           Response = user_already_joined;
         false ->
           NewSt = St#chatroom_st{clients = St#chatroom_st.clients ++ [ClientName]},
-          Response = "successfully joined"
+          Response = joined
       end
   end,
   {reply, Response, NewSt}.
