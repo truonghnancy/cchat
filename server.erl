@@ -43,7 +43,7 @@ handle(St, Request) ->
 
     {disconnect, ClientName} ->
       Response = "disconnected",
-      NewSt = St#server_st{clientNames = lists:delete(ClientName, clientNames)};
+      NewSt = St#server_st{clientNames = lists:delete(ClientName, St#server_st.clientNames)};
     {join, Channel, ClientName} ->
       ChannelAtom = list_to_atom(Channel),
       case lists:any(fun(e) -> e == Channel end, St#server_st.channels) of
