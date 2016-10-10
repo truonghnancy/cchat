@@ -38,8 +38,24 @@ handle(St, {connect, Server}) ->
 
 %% Disconnect from server
 handle(St, disconnect) ->
+    case St#client_st.connected of
+      false ->
+        {reply, {error, user_not_connected, "Client is not connected to a server!"}, St};
+      true ->
+        if
+          length(St#client_st.chatrooms) > 0 -> {reply, {error, leave_channels_first, "Leave channels before disconnecting!"}, St};
+          true ->
+            Response = genserver:request(St#client_st.serverAtom, disconnect),
+            io:fwrite("Client received: ~p~n", [Response]),
+            case Response of
+              "Timeout" -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
+              "disconnected" ->
+                NewSt = St#client_st{connected=false, serverAtom = ""},
+                {reply, ok, NewSt}
+            end
+        end
+    end;
     % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
 
 % Join channel
 handle(St, {join, Channel}) ->
