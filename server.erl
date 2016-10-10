@@ -25,7 +25,13 @@ handle(St, Request) ->
   % io:fwrite("Request ~p~n", [Request]),
   case Request of
     {connect, ClientName} ->
-      case lists:any(fun(e) -> e == ClientName end, St#server_st.clientNames) of
+      Contains = fun(E) ->
+        case E == ClientName of
+          true -> true;
+          false -> false
+        end
+      end,
+      case lists:any(Contains, St#server_st.clientNames) of
         true ->
           Response = user_already_connected,
           NewSt = St;
