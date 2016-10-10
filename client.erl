@@ -25,13 +25,16 @@ handle(St, {connect, Server}) ->
       true ->
         {reply, {error, user_already_connected, "Client is already connected to server!"}, St};
       false ->
-        Response = genserver:request(ServerAtom, connect),
+        Response = genserver:request(ServerAtom, {connect, St#client_st.nickname}),
         io:fwrite("Client received: ~p~n", [Response]),
         case Response of
           "Timeout" -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
           "connected" ->
             NewSt = St#client_st{connected=true, serverAtom = ServerAtom},
-            {reply, ok, NewSt}
+            {reply, ok, NewSt};
+          user_already_connected ->
+            NewSt = St,
+            {reply, {error, user_already_connected, "Other client with same nickname is already connected to server!"}, St}
         end
     end;
 % return error after timeout
@@ -45,7 +48,7 @@ handle(St, disconnect) ->
         if
           length(St#client_st.chatrooms) > 0 -> {reply, {error, leave_channels_first, "Leave channels before disconnecting!"}, St};
           true ->
-            Response = genserver:request(St#client_st.serverAtom, disconnect),
+            Response = genserver:request(St#client_st.serverAtom, {disconnect, St#client_st.nickname}),
             io:fwrite("Client received: ~p~n", [Response]),
             case Response of
               "Timeout" -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
