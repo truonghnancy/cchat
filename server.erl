@@ -46,15 +46,15 @@ handle(St, Request) ->
       NewSt = St#server_st{clientNames = lists:delete(ClientName, St#server_st.clientNames)};
     {join, Channel, ClientName} ->
       ChannelAtom = list_to_atom(Channel),
-      case lists:any(fun(e) -> e == Channel end, St#server_st.channels) of
+      case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
         true -> % it does exist
           % call genserver:request with the channel name to add the client to client list
           Response = genserver:request(ChannelAtom, {addClient, ChannelAtom, ClientName}),
           NewSt = St;
         false -> % it does NOT exist yet
-          genserver:start(ChannelAtom, initial_cState(ChannelAtom, St#server_st.serverName, ClientName), fun handle_chat/2),
-          NewSt = St#server_st{channels = St#server_st.channels ++ [ChannelAtom]},
-          Response = "joined"
+          io:fwrite("ChannelAtom = ~n"),
+          Response = genserver:start(ChannelAtom, initial_cState(ChannelAtom, St#server_st.serverName, ClientName), fun handle_chat/2),
+          NewSt = St#server_st{channels = St#server_st.channels ++ [ChannelAtom]}
       end;
     {leave, Channel} ->
       Response = "left",
@@ -71,10 +71,10 @@ handle(St, Request) ->
 handle_chat(St, Request) ->
   case Request of
     {addClient, ChannelAtom, ClientName} ->
-      case lists:any(fun(e) -> e == ClientName end, St#chatroom_st.clients) of
+      case lists:any(fun(E) -> E == ClientName end, St#chatroom_st.clients) of
         true ->
           NewSt = St,
-          Response = "already joined";
+          Response = user_already_joined;
         false ->
           NewSt = St#chatroom_st{clients = St#chatroom_st.clients ++ [ClientName]},
           Response = "successfully joined"

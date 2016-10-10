@@ -64,8 +64,14 @@ handle(St, disconnect) ->
 handle(St, {join, Channel}) ->
     % {reply, ok, St} ;
     %% TODO: Remeber to add the client nickname when sending request to server
-    genserver:request(St#client_st.serverAtom, {join, Channel, St#client_st.nickname}),
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    Response = genserver:request(St#client_st.serverAtom, {join, Channel, St#client_st.nickname}),
+    case Response of
+      user_already_joined ->
+        {reply, {error, user_already_joined, "User already joined this chatroom"}, St};
+      _ ->
+        NewSt = St#client_st{chatrooms = St#client_st.chatrooms ++ [Channel]},
+        {reply, ok, NewSt}
+    end;
 
 %% Leave channel
 handle(St, {leave, Channel}) ->
