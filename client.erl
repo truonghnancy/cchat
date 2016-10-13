@@ -7,7 +7,7 @@
 
 %% Produce initial state
 initial_state(Nick, GUIName) ->
-    #client_st { gui = GUIName, connected = false, chatrooms = [], nickname = Nick }.
+    #client_st { gui = GUIName, connected = false, chatrooms = [], nickname = Nick }.%, clientId = self() }.
 
 %% ---------------------------------------------------------------------------
 
@@ -97,9 +97,10 @@ handle(St, {leave, Channel}) ->
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
-   case St#client_st.connected of
+   case St#client_st.connected and lists:any(fun(E) -> E == Channel end, St#client_st.chatrooms) of
      true ->
-      spawn(fun() -> genserver:request(St#client_st.serverAtom, {msg_from_GUI, Channel, Msg, St#client_st.nickname, self()}) end),
+      Pid = self(),
+      spawn(fun() -> genserver:request(St#client_st.serverAtom, {msg_from_GUI, Channel, Msg, St#client_st.nickname, Pid}) end),
       {reply, ok, St};
     false ->
       {reply, {error, user_not_joined, "Connect to a server first"}, St}
