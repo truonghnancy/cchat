@@ -102,8 +102,7 @@ handle(St, {msg_from_GUI, Channel, Msg}) ->
       case Response of
         user_not_joined ->
           {reply, {error, user_not_joined, "User has not yet joined this chatroom"}, St};
-        "sent" ->
-
+        "success" ->
           {reply, ok, St}
       end;
     false ->

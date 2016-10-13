@@ -71,7 +71,6 @@ handle(St, Request) ->
       case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
         true ->
           Response = genserver:request(ChannelAtom, {recieveMsg, Msg, Channel, ClientName, ClientId}),
-          % have to send msg to every client
           NewSt = St;
         false ->
           Response = user_not_joined,
@@ -108,9 +107,12 @@ handle_chat(St, Request) ->
       true ->
         NewSt = St,
         CallClients = fun(PID) ->
-          genserver:request(PID, {msg_to_GUI, Channel, ClientName,Msg})
+          case PID /= ClientId of
+            true -> genserver:request(PID, {incoming_msg, Channel, ClientName,Msg});
+            false -> 0
+          end
         end,
-        lists:map(CallClients, St#chatroom_st.clients),
+        lists:map(CallClients, St#chatroom_st.clientIds),
         Response = "success";
       false ->
         NewSt = St,
