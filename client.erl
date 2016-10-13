@@ -25,16 +25,17 @@ handle(St, {connect, Server}) ->
       true ->
         {reply, {error, user_already_connected, "Client is already connected to server!"}, St};
       false ->
-        Response = genserver:request(ServerAtom, {connect, St#client_st.nickname}),
+        Response = (catch genserver:request(ServerAtom, {connect, St#client_st.nickname})),
         io:fwrite("Client received: ~p~n", [Response]),
         case Response of
-          "Timeout" -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
+          {'EXIT', "Timeout"} -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
+          {'EXIT', _} -> {reply, {error, server_not_reached, "Server does not exist!"}, St};
           "connected" ->
             NewSt = St#client_st{connected=true, serverAtom = ServerAtom},
             {reply, ok, NewSt};
-          user_already_connected ->
+          nick_taken ->
             NewSt = St,
-            {reply, {error, user_already_connected, "Other client with same nickname is already connected to server!"}, St}
+            {reply, {error, nick_taken, "Other client with same nickname is already connected to server!"}, St}
         end
     end;
 % return error after timeout

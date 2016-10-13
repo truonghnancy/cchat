@@ -33,7 +33,7 @@ handle(St, Request) ->
       end,
       case lists:any(Contains, St#server_st.clientNames) of
         true ->
-          Response = user_already_connected,
+          Response = nick_taken,
           NewSt = St;
         false ->
           io:fwrite("clientName = " ++ ClientName ++ "~n"),
@@ -108,7 +108,7 @@ handle_chat(St, Request) ->
         NewSt = St,
         CallClients = fun(PID) ->
           case PID /= ClientId of
-            true -> genserver:request(PID, {incoming_msg, Channel, ClientName,Msg});
+            true -> spawn(fun() -> genserver:request(PID, {incoming_msg, Channel, ClientName,Msg}) end);
             false -> 0
           end
         end,
