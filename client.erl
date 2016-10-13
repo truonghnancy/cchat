@@ -65,7 +65,7 @@ handle(St, {join, Channel}) ->
     %% TODO: Remeber to add the client nickname when sending request to server
     case St#client_st.connected of
       true ->
-        Response = genserver:request(St#client_st.serverAtom, {join, Channel, St#client_st.nickname}),
+        Response = genserver:request(St#client_st.serverAtom, {join, Channel, St#client_st.nickname, self()}),
         case Response of
           user_already_joined ->
             {reply, {error, user_already_joined, "User already joined this chatroom"}, St};
@@ -81,7 +81,7 @@ handle(St, {join, Channel}) ->
 handle(St, {leave, Channel}) ->
     case St#client_st.connected of
       true ->
-        Response = genserver:request(St#client_st.serverAtom, {leave, Channel, St#client_st.nickname}),
+        Response = genserver:request(St#client_st.serverAtom, {leave, Channel, St#client_st.nickname, self()}),
         case Response of
           user_not_joined ->
             {reply, {error, user_not_joined, "User has not yet joined this chatroom"}, St};
@@ -98,7 +98,7 @@ handle(St, {leave, Channel}) ->
 handle(St, {msg_from_GUI, Channel, Msg}) ->
    case St#client_st.connected of
      true ->
-      Response = genserver:request(St#client_st.serverAtom, {msg_from_GUI, Channel, Msg, St#client_st.nickname}),
+      Response = genserver:request(St#client_st.serverAtom, {msg_from_GUI, Channel, Msg, St#client_st.nickname, self()}),
       case Response of
         user_not_joined ->
           {reply, {error, user_not_joined, "User has not yet joined this chatroom"}, St};

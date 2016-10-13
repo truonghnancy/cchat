@@ -9,8 +9,8 @@
 initial_state(ServerName) ->
     #server_st{serverName = ServerName, channels = [], clientNames = []}.
 
-initial_cState(ChatroomName, ServerName, ClientName) ->
-  #chatroom_st{name = ChatroomName, clients = [ClientName], serverName = ServerName}.
+initial_cState(ChatroomName, ServerName, ClientName, ClientId) ->
+  #chatroom_st{name = ChatroomName, clients = [ClientName], clientIds = [ClientId], serverName = ServerName}.
 
 %% ---------------------------------------------------------------------------
 
@@ -44,34 +44,33 @@ handle(St, Request) ->
     {disconnect, ClientName} ->
       Response = "disconnected",
       NewSt = St#server_st{clientNames = lists:delete(ClientName, St#server_st.clientNames)};
-    {join, Channel, ClientName} ->
-      ChannelAtom = list_to_atom(Channel),
-      case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
-        true -> % it does exist
-          % call genserver:request with the channel name to add the client to client list
-          Response = genserver:request(ChannelAtom, {addClient, ChannelAtom, ClientName}),
-          NewSt = St;
-        false -> % it does NOT exist yet
-          io:fwrite("ChannelAtom = ~n"),
-          genserver:start(ChannelAtom, initial_cState(ChannelAtom, St#server_st.serverName, ClientName), fun handle_chat/2),
-          Response = joined,
-          NewSt = St#server_st{channels = St#server_st.channels ++ [ChannelAtom]}
-      end;
-    {leave, Channel, ClientName} ->
+    {join, Channel, ClientName, ClientId} ->
       ChannelAtom = list_to_atom(Channel),
       case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
         true ->
-          Response = genserver:request(ChannelAtom, {leave, ChannelAtom, ClientName}),
+          Response = genserver:request(ChannelAtom, {addClient, ClientName, ClientId}),
+          NewSt = St;
+        false -> % it does NOT exist yet
+          io:fwrite("ChannelAtom = ~n"),
+          genserver:start(ChannelAtom, initial_cState(ChannelAtom, St#server_st.serverName, ClientName, ClientId), fun handle_chat/2),
+          Response = joined,
+          NewSt = St#server_st{channels = St#server_st.channels ++ [ChannelAtom]}
+      end;
+    {leave, Channel, ClientName, ClientId} ->
+      ChannelAtom = list_to_atom(Channel),
+      case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
+        true ->
+          Response = genserver:request(ChannelAtom, {leave, ClientName, ClientId}),
           NewSt = St;
         false ->
           Response = user_not_joined,
           NewSt = St
        end;
-    {msg_from_GUI, Channel, Msg, ClientName} ->
+    {msg_from_GUI, Channel, Msg, ClientName, ClientId} ->
       ChannelAtom = list_to_atom(Channel),
       case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
         true ->
-          Response = genserver:request(ChannelAtom, {recieveMsg, ClientName}),
+          Response = genserver:request(ChannelAtom, {recieveMsg, Msg, Channel, ClientName, ClientId}),
           % have to send msg to every client
           NewSt = St;
         false ->
@@ -86,29 +85,33 @@ handle(St, Request) ->
 
 handle_chat(St, Request) ->
   case Request of
-    {addClient, ChannelAtom, ClientName} ->
+    {addClient, ClientName, ClientId} ->
       case lists:any(fun(E) -> E == ClientName end, St#chatroom_st.clients) of
         true ->
           NewSt = St,
           Response = user_already_joined;
         false ->
-          NewSt = St#chatroom_st{clients = St#chatroom_st.clients ++ [ClientName]},
-          Response = joined
+          Response = joined,
+          NewSt = St#chatroom_st{clients = St#chatroom_st.clients ++ [ClientName], clientIds = St#chatroom_st.clientIds ++ [ClientId]}
       end;
-    {leave, ChannelAtom, ClientName} ->
-      case lists:any(fun(E) -> E == ClientName end, St#chatroom_st.clients) of
+    {leave, ClientName, ClientId} ->
+      case lists:any(fun(E) -> E == ClientId end, St#chatroom_st.clientIds) of
         true ->
-          NewSt = St#chatroom_st{clients = lists:delete(ClientName, St#chatroom_st.clients)},
+          NewSt = St#chatroom_st{clients = lists:delete(ClientName, St#chatroom_st.clients), clientIds = lists:delete(ClientId, St#chatroom_st.clientIds)},
           Response = "left";
         false ->
           NewSt = St,
           Response = user_not_joined
       end;
-    {recieveMsg, ClientName} ->
+    {recieveMsg, Msg, Channel, ClientName, ClientId} ->
     case lists:any(fun(E) -> E == ClientName end, St#chatroom_st.clients) of
       true ->
         NewSt = St,
-        Response = St#chatroom_st.clients;
+        CallClients = fun(PID) ->
+          genserver:request(PID, {msg_to_GUI, Channel, ClientName,Msg})
+        end,
+        lists:map(CallClients, St#chatroom_st.clients),
+        Response = "success";
       false ->
         NewSt = St,
         Response = user_not_joined

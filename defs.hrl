@@ -8,4 +8,4 @@
 % Add whatever other fields you need.
 -record(server_st, {serverName, channels, clientNames}).
 
--record(chatroom_st, {name, clients, serverName}).
+-record(chatroom_st, {name, clients, clientIds, serverName}).
