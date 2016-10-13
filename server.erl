@@ -67,9 +67,16 @@ handle(St, Request) ->
           Response = user_not_joined,
           NewSt = St
        end;
-    {msg_from_GUI, Channel, Msg} ->
-      Response = "Connected to shire",
-      NewSt = St;
+    {msg_from_GUI, Channel, Msg, ClientName} ->
+      case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
+        true ->
+          Response = genserver:request(ChannelAtom, {recieveMsg, ClientName}),
+          % have to send msg to every client
+          NewSt = St;
+        false ->
+          Response = user_not_joined,
+          NewSt = St
+       end;
     {nick, Nick} ->
       Response = "Changed nickname",
       NewSt = St
@@ -95,6 +102,15 @@ handle_chat(St, Request) ->
         false ->
           NewSt = St,
           Response = user_not_joined
-      end
+      end;
+    {recieveMsg, ClientName} ->
+    case lists:any(fun(E) -> E == ClientName end, St#chatroom_st.clients) of
+      true ->
+        NewSt = St,
+        Response = St#chatroom_st.clients;
+      false ->
+        NewSt = St,
+        Response = user_not_joined
+    end
   end,
   {reply, Response, NewSt}.

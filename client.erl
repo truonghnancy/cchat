@@ -20,7 +20,7 @@ initial_state(Nick, GUIName) ->
 
 %% Connect to server
 handle(St, {connect, Server}) ->
-    ServerAtom = list_to_atom(Server),
+  ServerAtom = list_to_atom(Server),
     case St#client_st.connected of
       true ->
         {reply, {error, user_already_connected, "Client is already connected to server!"}, St};
@@ -95,9 +95,20 @@ handle(St, {leave, Channel}) ->
 
 
 % Sending messages
-handle(St, {msg_from_GUI, Channel, Msg}) ->
-    % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+handle(St, {msg_from_GUI, Channel, Msg})
+   case St#client_st.connected of
+     true ->
+      Response = genserver:request(St#client_st.serverAtom, {msg_from_GUI, Channel, Msg, St#client_st.nickname}),
+      case Response of
+        user_not_joined ->
+          {reply, {error, user_not_joined, "User has not yet joined this chatroom"}, St};
+        "sent" ->
+
+          {reply, ok, St}
+      end;
+    false ->
+      {reply, {error, user_not_joined, "Connect to a server first"}, St}
+  end;
 
 %% Get current nick
 handle(St, whoami) ->
