@@ -98,13 +98,13 @@ handle(St, {leave, Channel}) ->
 handle(St, {msg_from_GUI, Channel, Msg}) ->
    case St#client_st.connected of
      true ->
-      Response = genserver:request(St#client_st.serverAtom, {msg_from_GUI, Channel, Msg, St#client_st.nickname, self()}),
-      case Response of
-        user_not_joined ->
-          {reply, {error, user_not_joined, "User has not yet joined this chatroom"}, St};
-        "success" ->
-          {reply, ok, St}
-      end;
+      spawn(fun() -> genserver:request(St#client_st.serverAtom, {msg_from_GUI, Channel, Msg, St#client_st.nickname, self()}) end),
+%      case Response of
+%        user_not_joined ->
+%          {reply, {error, user_not_joined, "User has not yet joined this chatroom"}, St};
+%        "success" ->
+%          {reply, ok, St}
+%      end;
     false ->
       {reply, {error, user_not_joined, "Connect to a server first"}, St}
   end;
