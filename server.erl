@@ -33,7 +33,7 @@ handle(St, Request) ->
       end,
       case lists:any(Contains, St#server_st.clientNames) of
         true ->
-          Response = user_already_connected,
+          Response = nick_taken,
           NewSt = St;
         false ->
           io:fwrite("clientName = " ++ ClientName ++ "~n"),

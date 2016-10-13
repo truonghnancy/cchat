@@ -32,9 +32,9 @@ handle(St, {connect, Server}) ->
           "connected" ->
             NewSt = St#client_st{connected=true, serverAtom = ServerAtom},
             {reply, ok, NewSt};
-          user_already_connected ->
+          nick_taken ->
             NewSt = St,
-            {reply, {error, user_already_connected, "Other client with same nickname is already connected to server!"}, St}
+            {reply, {error, nick_taken, "Other client with same nickname is already connected to server!"}, St}
         end
     end;
 % return error after timeout
