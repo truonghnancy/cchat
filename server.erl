@@ -108,7 +108,7 @@ handle_chat(St, Request) ->
         NewSt = St,
         CallClients = fun(PID) ->
           case PID /= ClientId of
-            true -> genserver:request(PID, {incoming_msg, Channel, ClientName,Msg});
+            true -> spawn(fun() -> genserver:request(PID, {incoming_msg, Channel, ClientName,Msg}) end);
             false -> 0
           end
         end,
