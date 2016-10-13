@@ -68,6 +68,7 @@ handle(St, Request) ->
           NewSt = St
        end;
     {msg_from_GUI, Channel, Msg, ClientName} ->
+      ChannelAtom = list_to_atom(Channel),
       case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
         true ->
           Response = genserver:request(ChannelAtom, {recieveMsg, ClientName}),

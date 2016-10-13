@@ -95,7 +95,7 @@ handle(St, {leave, Channel}) ->
 
 
 % Sending messages
-handle(St, {msg_from_GUI, Channel, Msg})
+handle(St, {msg_from_GUI, Channel, Msg}) ->
    case St#client_st.connected of
      true ->
       Response = genserver:request(St#client_st.serverAtom, {msg_from_GUI, Channel, Msg, St#client_st.nickname}),
