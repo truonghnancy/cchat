@@ -29,6 +29,7 @@ handle(St, {connect, Server}) ->
         io:fwrite("Client received: ~p~n", [Response]),
         case Response of
           {'EXIT', "Timeout"} -> {reply, {error, server_not_reached, "Server could not be reached!"}, St};
+          {'EXIT', _} -> {reply, {error, server_not_reached, "Server does not exist!"}, St};
           "connected" ->
             NewSt = St#client_st{connected=true, serverAtom = ServerAtom},
             {reply, ok, NewSt};
