@@ -97,14 +97,20 @@ handle(St, {leave, Channel}) ->
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
-   case St#client_st.connected and lists:any(fun(E) -> E == Channel end, St#client_st.chatrooms) of
-     true ->
-      Pid = self(),
-      spawn(fun() -> genserver:request(St#client_st.serverAtom, {msg_from_GUI, Channel, Msg, St#client_st.nickname, Pid}) end),
-      {reply, ok, St};
-    false ->
-      {reply, {error, user_not_joined, "Connect to a server first"}, St}
-  end;
+      ChannelAtom = list_to_atom(Channel),
+      case St#client_st.connected and lists:any(fun(E) -> E == Channel end, St#client_st.chatrooms) of
+        true ->
+          Pid = self(),
+          Response = genserver:request(ChannelAtom, {recieveMsg, Msg, Channel, St#client_st.nickname, Pid}),
+          case Response of
+            "success" -> 
+              {reply, ok, St};
+            user_not_joined ->
+              {reply, {error, user_not_joined, "User has not joined chatroom yet"}, St}
+          end;
+        false ->
+          {reply, {error, user_not_joined, "Connect to a server first"}, St}
+       end;
 
 %% Get current nick
 handle(St, whoami) ->

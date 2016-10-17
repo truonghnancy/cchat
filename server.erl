@@ -66,16 +66,6 @@ handle(St, Request) ->
           Response = user_not_joined,
           NewSt = St
        end;
-    {msg_from_GUI, Channel, Msg, ClientName, ClientId} ->
-      ChannelAtom = list_to_atom(Channel),
-      case lists:any(fun(E) -> E == ChannelAtom end, St#server_st.channels) of
-        true ->
-          Response = genserver:request(ChannelAtom, {recieveMsg, Msg, Channel, ClientName, ClientId}),
-          NewSt = St;
-        false ->
-          Response = user_not_joined,
-          NewSt = St
-       end;
     {nick, Nick} ->
       Response = "Changed nickname",
       NewSt = St
